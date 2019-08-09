@@ -43,7 +43,7 @@ def process_song_data(spark, input_data, output_data):
 
 def process_log_data(spark, input_data, output_data):
     # get filepath to log data file
-    log_data = os.path.join(input_data,"log_data/A/A/A.json")
+    log_data = os.path.join(input_data,"log_data/*/*/*.json")
 
     # read log data file
     df = spark.read.json(log_data)
@@ -63,24 +63,18 @@ def process_log_data(spark, input_data, output_data):
     df = df.withColumn('timestamp', get_timestamp(df.ts))
     
     # create datetime column from original timestamp column
-    get_datetime = udf(lambda x: datetime.fromtimestamp(int(int(x)/1000)))
-    get_week = udf(lambda x: calendar.day_name[x.weekday()])
-    get_weekday = udf(lambda x: x.isocalendar()[1])
-    get_hour = udf(lambda x: x.hour)
-    get_day = udf(lambda x : x.day)
-    get_year = udf(lambda x: x.year)
-    get_month = udf(lambda x: x.month)
-    
-    df = df.withColumn('start_time', get_datetime(df.ts))
-    df = df.withColumn('hour', get_hour(df.start_time))
-    df = df.withColumn('day', get_day(df.start_time))
-    df = df.withColumn('week', get_week(df.start_time))
-    df = df.withColumn('month', get_month(df.start_time))
-    df = df.withColumn('year', get_year(df.start_time))
-    df = df.withColumn('weekday', get_weekday(df.start_time))
+    get_datetime = udf(lambda x: str(datetime.fromtimestamp(int(x) / 1000.0)))
+    df = df.withColumn("datetime", get_datetime(df.ts))
     
     # extract columns to create time table
-    time_table = df['start_time', 'hour', 'day', 'week', 'month', 'year', 'weekday']
+    time_table = df.select(
+       'datetime'.alias('start_time'),
+        hour('datetime').alias('hour'),
+        dayofmonth('datetime').alias('day'),
+        weekofyear('datetime').alias('week'),
+        month('datetime').alias('month'),
+        year('datetime').alias('year') 
+   )
     
     # write time table to parquet files partitioned by year and month
     time_table.write.partitionBy('year', 'month').parquet(os.path.join(output_data, 'time.parquet'), 'overwrite')
@@ -106,7 +100,7 @@ def main():
     output_data = "s3a://mengheng-s3/"
     
     process_song_data(spark, input_data, output_data)    
-#     process_log_data(spark, input_data, output_data)
+    process_log_data(spark, input_data, output_data)
 
 
 if __name__ == "__main__":

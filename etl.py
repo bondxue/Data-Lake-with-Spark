@@ -68,7 +68,7 @@ def process_log_data(spark, input_data, output_data):
     
     # extract columns to create time table
     time_table = df.select(
-       'datetime'.alias('start_time'),
+        col('datetime').alias('start_time'),
         hour('datetime').alias('hour'),
         dayofmonth('datetime').alias('day'),
         weekofyear('datetime').alias('week'),
@@ -81,10 +81,12 @@ def process_log_data(spark, input_data, output_data):
     print("time.parquet completed")
 
     # read in song data to use for songplays table
-    song_df = spark.read.parquet("songs.parquet")
+    song_data = os.path.join(input_data, "song-data/A/A/A/*.json")
+    song_df = spark.read.json(song_data)
 
     # extract columns from joined song and log datasets to create songplays table 
     df = df.join(song_df, song_df.title == df.song)
+    print(df)
     songplays_table = df['start_time', 'userId', 'level', 'song_id', 'artist_id', 'sessionId', 'location', 'userAgent']
     songplays_table.select(monotonically_increasing_id().alias('songplay_id')).collect()
     

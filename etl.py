@@ -22,6 +22,15 @@ def create_spark_session():
 
 
 def process_song_data(spark, input_data, output_data):
+    """
+    Description: This function loads song_data from S3 and processes it by extracting the songs and artist tables
+                and then again loaded back to S3
+        
+    Parameters:
+            spark       : Spark Session
+            input_data  : location of song_data json files with the songs metadata
+            output_data : S3 bucket were dimensional tables in parquet format will be stored
+    """
     # get filepath to song data file
     song_data = os.path.join(input_data, "song-data/A/A/A/*.json")
     
@@ -30,18 +39,30 @@ def process_song_data(spark, input_data, output_data):
 
     # extract columns to create songs table
     songs_table = df['song_id', 'title', 'artist_id', 'year', 'duration']
+    songs_table = songs_table.dropDuplicates()
     
     # write songs table to parquet files partitioned by year and artist
     songs_table.write.partitionBy('year', 'artist_id').parquet(os.path.join(output_data, 'songs.parquet'), 'overwrite')
 
     # extract columns to create artists table
     artists_table = df['artist_id', 'artist_name', 'artist_location', 'artist_latitude', 'artist_longitude']
+    artists_table = artists_table.dropDuplicates()
     
     # write artists table to parquet files
     artists_table.write.parquet(os.path.join(output_data, 'artists.parquet'), 'overwrite')
 
 
 def process_log_data(spark, input_data, output_data):
+    """
+        Description: This function loads log_data from S3 and processes it by extracting the songs and artist tables
+                    and then again loaded back to S3. Also output from previous function is used in by spark.read.json command
+        
+        Parameters:
+            spark       : Spark Session
+            input_data  : location of log_data json files with the events data
+            output_data : S3 bucket were dimensional tables in parquet format will be stored
+            
+    """
     # get filepath to log data file
     log_data = os.path.join(input_data,"log_data/*/*/*.json")
 
@@ -53,6 +74,7 @@ def process_log_data(spark, input_data, output_data):
 
     # extract columns for users table    
     users_table = df['userId', 'firstName', 'lastName', 'gender', 'level']
+    users_table = users_table.dropDuplicates()
     
     # write users table to parquet files
     users_table.write.parquet(os.path.join(output_data, 'users.parquet'), 'overwrite')
@@ -75,6 +97,7 @@ def process_log_data(spark, input_data, output_data):
         month('datetime').alias('month'),
         year('datetime').alias('year') 
    )
+    time_table = time_table.dropDuplicates()
     
     # write time table to parquet files partitioned by year and month
     time_table.write.partitionBy('year', 'month').parquet(os.path.join(output_data, 'time.parquet'), 'overwrite')
@@ -91,12 +114,15 @@ def process_log_data(spark, input_data, output_data):
     songplays_table.select(monotonically_increasing_id().alias('songplay_id')).collect()
     
     # write songplays table to parquet files partitioned by year and month
-    songplays_table.write.parquet(os.path.join(output_data, 'songplays.parquet'), 'overwrite')
+    songplays_table.write.partitionBy('year', 'month').parquet(os.path.join(output_data, 'songplays.parquet'), 'overwrite')
     print("songplays.parquet completed")
     print("process_log_data completed")
 
 
 def main():
+    """
+    Extract songs and events data from S3, Transform it into dimensional tables format, and Load it back to S3 in Parquet format
+    """
     spark = create_spark_session()
     input_data = "s3a://udacity-dend/"
     output_data = "s3a://mengheng-s3/"

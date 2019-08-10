@@ -9,7 +9,11 @@ Datasets used in this project are provided in two public **S3** buckets. One buc
 
 ### Database Schema
 
-I createa a star schema optimized for queries on song play analysis. This includes the following tables.
+I createa a star schema optimized for queries on song play analysis as follows:
+
+![schema](/images/schema.png)
+
+This includes the following tables.
 
 #### Fact Table 
 + **songplays** - records in event data associated with song plays i.e. records with page `NextSong`

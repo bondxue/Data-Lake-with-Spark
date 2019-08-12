@@ -1,5 +1,6 @@
 ## Project 4: Data Lake with Apache Spark
 ---
+[![Project passed](https://img.shields.io/badge/project-passed-success.svg)](https://img.shields.io/badge/project-passed-success.svg)
 
 ### Introduction 
 In this project, we try to help one music streaming startup, Sparkify, to move their date warehouse to a data lake. Specifically, I bulid an ETF pipline to extract their data from **S3** and processes them using **Spark**, and loads the data into a new **S3** as a set of *dimensional tables*. This will allow their analytics team to continue finding insights in what songs their users are listening to.
